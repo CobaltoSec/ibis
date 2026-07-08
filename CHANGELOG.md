@@ -1,5 +1,22 @@
 # Changelog
 
+## [RT-IBIS-PUBLIC-POLICY] — 2026-07-08 — Política pública de disclosure + publicación Tier D
+
+### Policy
+- Repo público `CobaltoSec/disclosure-policy` con política responsable de disclosure (Tier A/B/C, notificación vía GHSA invite)
+- Tier D es concepto interno — no figura en la policy pública; sin maintainer = publicar directamente
+- Email de contacto: nicolas@cobalto-sec.tech
+- Corvus README actualizado con link a disclosure-policy (commit 9bac5e9)
+- Condor README actualizado localmente
+
+### Operacional
+- 4 advisories Tier D publicados: GHSA-jgxf (campertunity-ai-tools), GHSA-prc4 (localparse-mcp), GHSA-32vx (emilia-protocol), GHSA-wx78 (@tensorfeed/mcp-server)
+- Fix: advisories con `vulnerable_version_range: null` fallaban con HTTP 422 al publicar — parcheados con `>= 0.0.1`
+- GHSA-mc5c-pq6j-9ffp (lobe-chat) era duplicado de GHSA-527q-fpmm-3gmc — DB sincronizada a `state=closed`
+
+### Arquitectura futura
+- RT-IBIS-HUB diseñado: Ibis como MCP server central; todos los frameworks llaman `ibis_register_finding()`; lógica de GHSA creation migrada desde Shrike
+
 ## [RT-IBIS-CURATE] — 2026-07-08 — Modo interactivo de curación de advisories
 
 `ibis curate` para revisar y confirmar tier de findings pendientes tras un sync.
