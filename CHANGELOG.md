@@ -1,5 +1,24 @@
 # Changelog
 
+## [RT-IBIS-CURATE] — 2026-07-08 — Modo interactivo de curación de advisories
+
+`ibis curate` para revisar y confirmar tier de findings pendientes tras un sync.
+
+### Nuevo comando
+- `ibis curate [--all]` — itera advisories sin curar ordenados por deadline; para cada uno muestra package, severity, tier, deadline, collaborators, downloads y notas
+- Acciones: `k` keep (confirmar tier), `t A-D` cambio de tier (recalcula deadline desde `created_at`), `n <texto>` agregar nota, `s` skip, `q` salir
+- `--all` incluye advisories ya curados para re-revisión
+
+### DB
+- Nueva columna `curated INTEGER DEFAULT 0` — migración automática vía `ALTER TABLE` al iniciar (idempotente)
+- `list_uncurated()`, `update_curated()`, `update_tier()` en `db.py`
+
+### Fix
+- `Console(highlight=False)` — desactiva el number-highlighting automático de Rich que insertaba ANSI codes en medio de strings (GHSA IDs, contadores), rompiendo las assertions de tests
+
+### Tests (70 tests, 1.43s)
+- `tests/test_curate.py` — 13 tests nuevos: DB layer (filtrado, curated flag, tier update) + CLI (keep, tier change, nota, skip, quit anticipado, --all)
+
 ## [RT-IBIS-MULTI-SYNC] — 2026-07-07 — Condor/Shrike sync + push mode + tests
 
 Integración de Condor y Shrike como fuentes de advisories, más modo push (`ibis add`) para que cualquier herramienta registre findings directamente. Primera suite de e2e tests.

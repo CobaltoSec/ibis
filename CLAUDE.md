@@ -14,6 +14,7 @@ Disclosure management tool para CobaltoSec. Trackea, clasifica y publica securit
   - `--source condor --results report.json` — importa Condor report.json
   - `--source shrike --dir findings/` — importa directorio de findings de Shrike
 - `ibis add --package pkg --severity sev --source corvus|condor|shrike|manual [--ghsa ID] [--tier A|B|C|D]` — push mode
+- `ibis curate [--all]` — modo interactivo: revisar/confirmar tier, cambiar tier, agregar notas (k/t/n/s/q)
 - `ibis status` — tabla completa con tier, deadline, contactos
 - `ibis due [--days N]` — advisories que vencen en N días (default 7)
 - `ibis publish <GHSA>` — publica draft a público via gh api
@@ -59,7 +60,7 @@ ibis/
 tests/
   conftest.py   — fixtures: test_db (SQLite tmp), no_npm/npm_enterprise, mock_gh_api
   fixtures/     — JSONs de Condor y Shrike para tests
-  test_*.py     — e2e tests por módulo (57 total)
+  test_*.py     — e2e tests por módulo (70 total)
 ```
 
 ## IDs sintéticos

@@ -14,7 +14,7 @@ from .models import Advisory, AdvisorySource, AdvisoryState, VendorTier, TIER_DA
 from .sync.ghsa import sync as _sync_ghsa
 
 app = typer.Typer(help="Ibis — CobaltoSec disclosure management")
-console = Console(force_terminal=True, width=140)
+console = Console(force_terminal=True, width=140, highlight=False)
 
 SEVERITY_COLOR = {
     "critical": "bold red",
@@ -362,6 +362,122 @@ def db_show(
 
     total = conn.execute("SELECT COUNT(*) FROM advisories").fetchone()[0]
     console.print(f"[dim]Showing {len(rows)} of {total} total rows. DB: {db_path}[/dim]\n")
+
+
+def _print_advisory_curate(a: Advisory, idx: int, total: int, today: date) -> None:
+    delta = (a.publish_by - today).days
+    if delta < 0:
+        days_str = f"[bold red]OVERDUE {abs(delta)}d[/bold red]"
+    elif delta <= 7:
+        days_str = f"[yellow]{delta}d[/yellow]"
+    else:
+        days_str = f"[dim]{delta}d[/dim]"
+
+    tier_color = TIER_COLOR.get(a.tier, "white")
+    sev_color = SEVERITY_COLOR.get(a.severity, "white")
+
+    console.print("\n" + "─" * 60)
+    console.print(f"  [bold][{idx}/{total}][/bold]  [dim]{a.ghsa_id}[/dim]")
+    console.print(
+        f"  {a.package}  [{sev_color}]{a.severity}[/{sev_color}]  "
+        f"Tier [{tier_color}]{a.tier.value}[/{tier_color}] ({TIER_LABELS[a.tier]}) — "
+        f"deadline {a.publish_by}  {days_str}"
+    )
+    if a.collaborator_removed:
+        console.print("  Collaborators: [red]⚠ removido[/red]")
+    elif a.collaborators:
+        console.print(f"  Collaborators: {', '.join(a.collaborators)}")
+    else:
+        console.print("  Collaborators: [red]ninguno[/red]")
+    if a.npm_downloads:
+        console.print(f"  Downloads: {a.npm_downloads:,}/wk")
+    if a.notes:
+        console.print(f"  Notes: [dim]{a.notes}[/dim]")
+
+
+@app.command()
+def curate(
+    all_: bool = typer.Option(False, "--all", "-a", help="Include already-curated advisories"),
+):
+    """Interactively review and confirm tier for pending advisories."""
+    db.init_db()
+    advisories = db.list_all(state="draft") if all_ else db.list_uncurated()
+
+    if not advisories:
+        console.print("[green]Nothing to curate.[/green]")
+        return
+
+    today = date.today()
+    total = len(advisories)
+    curated_count = 0
+    skipped_count = 0
+    done = False
+
+    for idx, a in enumerate(advisories, 1):
+        if done:
+            break
+
+        while True:
+            _print_advisory_curate(a, idx, total, today)
+            console.print("\n  [dim][k]eep  [t A-D]ier  [n]ote  [s]kip  [q]uit[/dim]")
+
+            try:
+                resp = typer.prompt("  >", prompt_suffix=" ").strip()
+            except (EOFError, KeyboardInterrupt):
+                done = True
+                break
+
+            parts = resp.split(maxsplit=1)
+            action = parts[0].lower() if parts else ""
+            arg = parts[1] if len(parts) > 1 else ""
+
+            if action.startswith("t") and len(action) > 1:
+                arg = action[1:]
+                action = "t"
+
+            if action == "k":
+                db.update_curated(a.ghsa_id, True)
+                curated_count += 1
+                break
+
+            elif action == "t":
+                tier_val = arg.strip().upper()
+                try:
+                    new_tier = VendorTier(tier_val)
+                except ValueError:
+                    console.print(f"  [red]Invalid tier: {tier_val!r}. A/B/C/D only.[/red]")
+                    continue
+                new_dl = tiers.publish_deadline(new_tier, a.created_at)
+                db.update_tier(a.ghsa_id, new_tier, new_dl)
+                db.update_curated(a.ghsa_id, True)
+                console.print(
+                    f"  [green]✓ Tier → [{TIER_COLOR[new_tier]}]{new_tier.value}[/{TIER_COLOR[new_tier]}]"
+                    f"  deadline {new_dl}[/green]"
+                )
+                curated_count += 1
+                break
+
+            elif action == "n":
+                if not arg:
+                    console.print("  [red]Usage: n <note text>[/red]")
+                    continue
+                db.update_notes(a.ghsa_id, arg)
+                a = db.get(a.ghsa_id)
+                console.print("  [dim]Note saved.[/dim]")
+
+            elif action == "s":
+                skipped_count += 1
+                break
+
+            elif action == "q":
+                done = True
+                break
+
+            else:
+                console.print(f"  [red]Unknown: {resp!r}. Use k/t/n/s/q[/red]")
+
+    remaining = total - curated_count - skipped_count
+    console.print(f"\n[dim]Curated {curated_count}/{total}  Skipped {skipped_count}  Remaining {remaining}[/dim]")
 
 
 @app.command()

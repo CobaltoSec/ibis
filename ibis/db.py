@@ -31,9 +31,16 @@ def init_db() -> None:
                 publish_by           TEXT NOT NULL,
                 state                TEXT NOT NULL DEFAULT 'draft',
                 npm_downloads        INTEGER,
-                notes                TEXT NOT NULL DEFAULT ''
+                notes                TEXT NOT NULL DEFAULT '',
+                curated              INTEGER NOT NULL DEFAULT 0
             )
         """)
+        try:
+            conn.execute(
+                "ALTER TABLE advisories ADD COLUMN curated INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
 
 
 def upsert(advisory: Advisory) -> None:
@@ -42,7 +49,7 @@ def upsert(advisory: Advisory) -> None:
             INSERT INTO advisories VALUES (
                 :ghsa_id, :package, :ecosystem, :severity, :source, :tier,
                 :collaborators, :collaborator_removed, :created_at, :publish_by,
-                :state, :npm_downloads, :notes
+                :state, :npm_downloads, :notes, 0
             )
             ON CONFLICT(ghsa_id) DO UPDATE SET
                 package              = excluded.package,
@@ -113,6 +120,30 @@ def mark_collab_removed(ghsa_id: str) -> None:
         conn.execute(
             "UPDATE advisories SET collaborator_removed = 1, tier = 'D' WHERE ghsa_id = ?",
             (ghsa_id,)
+        )
+
+
+def list_uncurated() -> list[Advisory]:
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM advisories WHERE state = 'draft' AND curated = 0 ORDER BY publish_by"
+        ).fetchall()
+    return [_row_to_advisory(r) for r in rows]
+
+
+def update_curated(ghsa_id: str, curated: bool) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "UPDATE advisories SET curated = ? WHERE ghsa_id = ?",
+            (int(curated), ghsa_id)
+        )
+
+
+def update_tier(ghsa_id: str, tier: VendorTier, publish_by: date) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "UPDATE advisories SET tier = ?, publish_by = ? WHERE ghsa_id = ?",
+            (tier.value, publish_by.isoformat(), ghsa_id)
         )
 
 
