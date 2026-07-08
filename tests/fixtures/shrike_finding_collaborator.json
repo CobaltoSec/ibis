@@ -1,0 +1,20 @@
+{
+  "target": "autogen",
+  "title": "Code injection via eval in AutoGen tool execution",
+  "severity": "CRITICAL",
+  "cve_type": "eval_injection",
+  "description": "AutoGen's tool execution mechanism allows arbitrary code execution.",
+  "proof": "Tool call with malicious payload executes arbitrary Python code.",
+  "notes": null,
+  "platform": "huntr",
+  "status": "submitted",
+  "huntr_url": null,
+  "submitted_at": "2026-06-20T11:00:00",
+  "github_repo": "microsoft/autogen",
+  "disclosure_url": "https://github.com/CobaltoSec/advisories/security/advisories/GHSA-m2m9-fp87-72m8",
+  "disclosure_mode": "advisory_fallback",
+  "disclosure_repo": "CobaltoSec/advisories",
+  "ghsa_id": "GHSA-m2m9-fp87-72m8",
+  "cve_status": "pending_mitre",
+  "collaborator_notified": "sonichi"
+}

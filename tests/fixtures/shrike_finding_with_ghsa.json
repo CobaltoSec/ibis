@@ -1,0 +1,20 @@
+{
+  "target": "playwright-mcp",
+  "title": "Path Traversal via unsanitized filename parameter",
+  "severity": "HIGH",
+  "cve_type": "path_traversal",
+  "description": "The MCP server allows reading arbitrary files via unsanitized filename input.",
+  "proof": "Tool call with filename=../../etc/passwd returns file contents.",
+  "notes": "Confirmed on playwright-mcp v0.0.28",
+  "platform": "huntr",
+  "status": "submitted",
+  "huntr_url": null,
+  "submitted_at": "2026-06-25T14:23:59",
+  "github_repo": "microsoft/playwright-mcp",
+  "disclosure_url": "https://github.com/CobaltoSec/advisories/security/advisories/GHSA-mf64-cgv4-ppcx",
+  "disclosure_mode": "advisory_fallback",
+  "disclosure_repo": "CobaltoSec/advisories",
+  "ghsa_id": "GHSA-mf64-cgv4-ppcx",
+  "cve_status": "pending_mitre",
+  "collaborator_notified": "pavelfeldman"
+}

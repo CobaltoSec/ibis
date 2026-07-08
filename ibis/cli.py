@@ -1,14 +1,16 @@
 from __future__ import annotations
 import subprocess
 import json
+import uuid
 from datetime import date
 from typing import Optional
+from pathlib import Path
 import typer
 from rich.console import Console
 from rich.table import Table
 from rich import box
-from . import db
-from .models import AdvisoryState, VendorTier, TIER_DAYS, TIER_LABELS
+from . import db, tiers, npm
+from .models import Advisory, AdvisorySource, AdvisoryState, VendorTier, TIER_DAYS, TIER_LABELS
 from .sync.ghsa import sync as _sync_ghsa
 
 app = typer.Typer(help="Ibis — CobaltoSec disclosure management")
@@ -31,10 +33,85 @@ TIER_COLOR = {
 
 @app.command()
 def sync(
+    source: str = typer.Option("ghsa", "--source", "-s", help="Source: ghsa | condor | shrike"),
+    results: Optional[Path] = typer.Option(None, "--results", "-r", help="Condor report.json path"),
+    findings_dir: Optional[Path] = typer.Option(None, "--dir", "-d", help="Shrike findings/ directory"),
     no_npm: bool = typer.Option(False, "--no-npm", help="Skip npm download lookup"),
 ):
-    """Pull all GHSAs from CobaltoSec/advisories and classify by tier."""
-    _sync_ghsa(fetch_npm=not no_npm)
+    """Pull advisories from a source and classify by tier."""
+    if source == "ghsa":
+        _sync_ghsa(fetch_npm=not no_npm)
+    elif source == "condor":
+        if not results:
+            console.print("[red]--results <report.json> required for --source condor[/red]")
+            raise typer.Exit(1)
+        from .sync.condor import sync as _sync_condor
+        _sync_condor(results, fetch_npm=not no_npm)
+    elif source == "shrike":
+        if not findings_dir:
+            console.print("[red]--dir <findings/> required for --source shrike[/red]")
+            raise typer.Exit(1)
+        from .sync.shrike import sync as _sync_shrike
+        _sync_shrike(findings_dir, fetch_npm=not no_npm)
+    else:
+        console.print(f"[red]Unknown source: {source!r}. Valid: ghsa, condor, shrike[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def add(
+    package: str = typer.Option(..., "--package", "-p", help="Package name"),
+    severity: str = typer.Option(..., "--severity", help="Severity: critical|high|medium|low"),
+    source: str = typer.Option("manual", "--source", "-s", help="Source: corvus|condor|shrike|manual"),
+    ghsa_id: Optional[str] = typer.Option(None, "--ghsa", help="GHSA ID (auto-generated if omitted)"),
+    tier: Optional[str] = typer.Option(None, "--tier", "-t", help="Force tier (A|B|C|D)"),
+    no_npm: bool = typer.Option(False, "--no-npm", help="Skip npm download lookup"),
+):
+    """Add an advisory directly — push mode for Corvus/Condor/Shrike."""
+    db.init_db()
+
+    try:
+        source_enum = AdvisorySource(source)
+    except ValueError:
+        console.print(f"[red]Unknown source: {source!r}. Valid: corvus, condor, shrike, manual[/red]")
+        raise typer.Exit(1)
+
+    if not ghsa_id:
+        ghsa_id = f"{source.upper()}-{uuid.uuid4().hex[:8]}"
+
+    dl = None if no_npm else npm.get_weekly_downloads(package)
+
+    if tier:
+        try:
+            tier_enum = VendorTier(tier.upper())
+        except ValueError:
+            console.print(f"[red]Invalid tier: {tier!r}. Valid: A, B, C, D[/red]")
+            raise typer.Exit(1)
+    else:
+        tier_enum = tiers.classify(package, [], False, dl)
+
+    publish_by = tiers.publish_deadline(tier_enum, date.today())
+
+    advisory = Advisory(
+        ghsa_id=ghsa_id,
+        package=package,
+        ecosystem="npm",
+        severity=severity.lower(),
+        source=source_enum,
+        tier=tier_enum,
+        collaborators=[],
+        created_at=date.today(),
+        publish_by=publish_by,
+        state=AdvisoryState.draft,
+    )
+    db.upsert(advisory)
+
+    tier_color = TIER_COLOR.get(tier_enum, "white")
+    console.print(
+        f"[bold green]✓[/bold green] {ghsa_id} "
+        f"[{tier_color}][{tier_enum.value}][/{tier_color}] "
+        f"{package} ({severity.lower()})"
+    )
 
 
 @app.command()

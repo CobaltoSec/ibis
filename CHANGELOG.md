@@ -1,5 +1,24 @@
 # Changelog
 
+## [RT-IBIS-MULTI-SYNC] — 2026-07-07 — Condor/Shrike sync + push mode + tests
+
+Integración de Condor y Shrike como fuentes de advisories, más modo push (`ibis add`) para que cualquier herramienta registre findings directamente. Primera suite de e2e tests.
+
+### Nuevos módulos de sync
+- `ibis sync --source condor --results report.json` — importa findings de un Condor `report.json`; package=platform, IDs sintéticos `CONDOR-YYYYMMDD-NNN`, Tier D por defecto (sin collaborators)
+- `ibis sync --source shrike --dir findings/` — importa todos los JSONs del directorio de findings de Shrike; usa `ghsa_id` si existe, sino `SHRIKE-{stem}`; collaborator_notified → Tier no-D
+
+### Nuevo comando push
+- `ibis add --package pkg --severity sev --source corvus|condor|shrike|manual [--ghsa ID] [--tier T]` — registra un advisory directamente (llamado por Corvus/Condor/Shrike post-GHSA); genera ID sintético con prefijo de source si no se pasa `--ghsa`
+
+### Tests e2e (57 tests, 0.93s)
+- `tests/conftest.py` + `tests/fixtures/` — fixtures JSON reales de Condor y Shrike; mocks solo de red (npm, gh api)
+- `tests/test_tiers.py`, `test_condor_sync.py`, `test_shrike_sync.py`, `test_add_command.py`, `test_ghsa_sync.py`
+
+### Decisiones de diseño
+- IDs sintéticos coexisten con GHSA IDs en la misma tabla (pk es TEXT, no valida formato)
+- `classify()` retorna Tier D si no hay collaborators antes de evaluar npm downloads — Condor findings siempre Tier D
+
 ## [RT-IBIS-BOOTSTRAP] — 2026-07-07 — Bootstrap + CLI UX
 
 Ibis v0.1.0 — disclosure management tool para CobaltoSec. Bootstrap completo con sync desde

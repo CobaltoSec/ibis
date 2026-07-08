@@ -1,0 +1,15 @@
+{
+  "target": "dify",
+  "title": "SSRF via httpx in dataset processing",
+  "severity": "CRITICAL",
+  "cve_type": "ssrf",
+  "description": "Dify's dataset processing allows SSRF via crafted URLs in document content.",
+  "proof": "POST /datasets with url=http://169.254.169.254/latest/meta-data returns AWS metadata.",
+  "notes": null,
+  "platform": "huntr",
+  "status": "submitted",
+  "huntr_url": "https://huntr.com/bounties/83e39642-ef2d-4fed-8db9-76f87c72870b",
+  "submitted_at": "2026-07-01T09:15:00",
+  "github_repo": null,
+  "ghsa_id": null
+}

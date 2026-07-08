@@ -1,0 +1,42 @@
+{
+  "target": "http://localhost:3002",
+  "platform": "flowise",
+  "findings": [
+    {
+      "title": "Unauthenticated access to credentials endpoint",
+      "severity": "CRITICAL",
+      "owasp_id": "ASI03",
+      "description": "The /api/v1/credentials endpoint is accessible without authentication.",
+      "evidence": "GET /api/v1/credentials → 200 OK (0 item(s) returned without auth)",
+      "remediation": "Enable authentication middleware.",
+      "confidence": 95,
+      "endpoint": "/api/v1/credentials",
+      "cwe_id": null
+    },
+    {
+      "title": "Prompt injection via user-controlled system prompt",
+      "severity": "HIGH",
+      "owasp_id": "ASI01",
+      "description": "User input flows into the system prompt without sanitization.",
+      "evidence": "POST /api/v1/prediction → injected content reflected in response",
+      "remediation": "Sanitize user inputs before including in system prompt.",
+      "confidence": 80,
+      "endpoint": "/api/v1/prediction",
+      "cwe_id": "CWE-77"
+    }
+  ],
+  "modules_run": ["auth-check", "goal-hijack"],
+  "surface": {
+    "platform": "flowise",
+    "base_url": "http://localhost:3002",
+    "version": "1.8.2",
+    "auth_required": false,
+    "flows": [],
+    "tools": [],
+    "endpoints": ["/api/v1/credentials", "/api/v1/prediction"],
+    "raw_info": {}
+  },
+  "started_at": "2026-07-07T10:00:00.000000Z",
+  "finished_at": "2026-07-07T10:00:07.000000Z",
+  "duration_seconds": 7.0
+}

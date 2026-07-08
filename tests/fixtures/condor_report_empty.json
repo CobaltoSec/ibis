@@ -1,0 +1,10 @@
+{
+  "target": "http://localhost:3001",
+  "platform": "langflow",
+  "findings": [],
+  "modules_run": ["auth-check"],
+  "surface": null,
+  "started_at": "2026-07-07T11:00:00.000000Z",
+  "finished_at": "2026-07-07T11:00:02.000000Z",
+  "duration_seconds": 2.0
+}
