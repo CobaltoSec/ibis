@@ -23,6 +23,7 @@ class AdvisoryState(str, Enum):
     draft = "draft"
     published = "published"
     withdrawn = "withdrawn"
+    closed = "closed"
 
 
 TIER_DAYS = {
