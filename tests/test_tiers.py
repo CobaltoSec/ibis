@@ -69,4 +69,4 @@ def test_publish_deadline_tier_c():
 
 def test_publish_deadline_tier_d():
     created = date(2026, 1, 1)
-    assert publish_deadline(VendorTier.D, created) == date(2026, 1, 22)  # +21d
+    assert publish_deadline(VendorTier.D, created) == created  # immediate (0d)

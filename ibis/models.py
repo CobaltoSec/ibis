@@ -9,7 +9,7 @@ class VendorTier(str, Enum):
     A = "A"  # Enterprise / major OSS — 90d
     B = "B"  # Mid-tier startup / active maintainer — 45d
     C = "C"  # Long tail indie — 30d
-    D = "D"  # No contact / removed — 21d
+    D = "D"  # No contact / removed — immediate (0d)
 
 
 class AdvisorySource(str, Enum):
@@ -30,7 +30,7 @@ TIER_DAYS = {
     VendorTier.A: 90,
     VendorTier.B: 45,
     VendorTier.C: 30,
-    VendorTier.D: 21,
+    VendorTier.D: 0,
 }
 
 TIER_LABELS = {

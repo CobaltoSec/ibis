@@ -1,5 +1,11 @@
 # Changelog
 
+## [RT-IBIS-TIER-D] — 2026-07-10 — Tier D = ventana 0 (publicar inmediatamente)
+
+- `TIER_DAYS[VendorTier.D] = 0` en `models.py` — advisories sin contacto tienen `publish_by = created_at`
+- Test `test_publish_deadline_tier_d` actualizado: espera `created` (no `created + 21d`)
+- CLAUDE.md: tabla de tiers actualizada (D = "Inmediato (0 días)")
+
 ## [RT-IBIS-PUBLIC-POLICY] — 2026-07-08 — Política pública de disclosure + publicación Tier D
 
 ### Policy

@@ -34,7 +34,7 @@ Disclosure management tool para CobaltoSec. Trackea, clasifica y publica securit
 | A | Enterprise / major OSS | 90 días |
 | B | Mid-tier startup / OSS activo | 45 días |
 | C | Long tail indie | 30 días |
-| D | Sin contacto / collab removido | 21 días |
+| D | Sin contacto / collab removido | Inmediato (0 días) |
 
 Lógica en `ibis/tiers.py`. Enterprise = scope conocido (@microsoft, @notionhq, etc.) OR >50k dl/wk.
 `classify()` retorna Tier D si `not collaborators` antes de evaluar downloads — Condor e `ibis add` sin collaborators siempre son Tier D.
