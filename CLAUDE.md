@@ -19,6 +19,7 @@ Disclosure management tool para CobaltoSec. Trackea, clasifica y publica securit
 - `ibis due [--days N]` — advisories que vencen en N días (default 7)
 - `ibis publish <GHSA>` — publica draft a público via gh api
 - `ibis note <GHSA> "texto"` — agrega nota a un advisory
+- `ibis close <GHSA> [--reason texto]` — cierra advisory (vendor rejected, not reproducible, withdrawn)
 - `ibis stats` — resumen por tier
 - `ibis mark-removed <GHSA> [--note texto]` — marca collaborator_removed=1, fuerza Tier D
 - `ibis db-show [--ghsa ID] [--tier X] [-n N]` — inspección raw de DB (schema + rows + advisory full)

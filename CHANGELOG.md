@@ -1,5 +1,11 @@
 # Changelog
 
+## [ad-hoc] — 2026-07-13 — ibis close + cierre GHSA-mf64-cgv4-ppcx (MSRC rejection)
+
+- Nuevo comando `ibis close <GHSA> [--reason texto]` — marca `state=closed`, appende reason a notes
+- Análisis fuente playwright-mcp@0.0.76: `checkFile()/isPathInside()` presente en playwright-core@1.61.0-alpha-1781023400000 (commit 8f6e433a) — MSRC correctamente rechazó arbitrary-file-write (%2e%2e%2f no decodifica en contexto JSON/MCP)
+- GHSA-mf64-cgv4-ppcx cerrado con razón técnica completa
+
 ## [RT-IBIS-TIER-D] — 2026-07-10 — Tier D = ventana 0 (publicar inmediatamente)
 
 - `TIER_DAYS[VendorTier.D] = 0` en `models.py` — advisories sin contacto tienen `publish_by = created_at`
