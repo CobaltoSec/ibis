@@ -297,6 +297,34 @@ def note(
 
 
 @app.command()
+def close(
+    ghsa_id: str = typer.Argument(..., help="GHSA ID"),
+    reason: Optional[str] = typer.Option(None, "--reason", "-r", help="Reason for closing"),
+):
+    """Close an advisory (vendor rejected, not reproducible, withdrawn, etc.)."""
+    db.init_db()
+    advisory = db.get(ghsa_id)
+    if not advisory:
+        console.print(f"[red]Not found: {ghsa_id}[/red]")
+        raise typer.Exit(1)
+
+    if advisory.state == AdvisoryState.closed:
+        console.print(f"[yellow]Already closed: {ghsa_id}[/yellow]")
+        raise typer.Exit(0)
+
+    db.update_state(ghsa_id, AdvisoryState.closed)
+    if reason:
+        existing = advisory.notes
+        new_note = f"{existing}\n{reason}".strip()
+        db.update_notes(ghsa_id, new_note)
+
+    console.print(f"[bold red]✗ Closed {ghsa_id}[/bold red]")
+    console.print(f"  Package: {advisory.package}")
+    if reason:
+        console.print(f"  Reason:  {reason}")
+
+
+@app.command()
 def db_show(
     limit: int = typer.Option(10, "--limit", "-n"),
     tier: Optional[str] = typer.Option(None, "--tier", "-t"),
