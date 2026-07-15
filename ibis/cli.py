@@ -262,7 +262,7 @@ def publish(
 
     db.update_state(ghsa_id, AdvisoryState.published)
     if _hub_emit:
-        _hub_emit("advisory.published", {
+        _hub_emit("ibis.advisory.published", {
             "ghsa_id": advisory.ghsa_id,
             "package": advisory.package,
             "severity": advisory.severity,
