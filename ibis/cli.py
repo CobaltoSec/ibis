@@ -6,6 +6,11 @@ from datetime import date
 from typing import Optional
 from pathlib import Path
 import typer
+
+try:
+    from cobalt_hub_client import emit as _hub_emit
+except ImportError:
+    _hub_emit = None
 from rich.console import Console
 from rich.table import Table
 from rich import box
@@ -256,6 +261,14 @@ def publish(
         raise typer.Exit(1)
 
     db.update_state(ghsa_id, AdvisoryState.published)
+    if _hub_emit:
+        _hub_emit("advisory.published", {
+            "ghsa_id": advisory.ghsa_id,
+            "package": advisory.package,
+            "severity": advisory.severity,
+            "tier": advisory.tier.value if advisory.tier else None,
+            "source": advisory.source.value,
+        }, source_tool="ibis")
     console.print(f"[bold green]✓ Published {ghsa_id}[/bold green]")
 
 
