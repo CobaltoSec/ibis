@@ -62,7 +62,9 @@ Ibis emits events to CobaltoHQ (`cobaltosec-hub`) on key state transitions:
 
 ## Current State
 
-58 total advisories — 7 published, 49 in active coordinated disclosure.
+<!-- IBIS_STATS_START -->
+58 total advisories — 7 published, 51 in active coordinated disclosure.
+<!-- IBIS_STATS_END -->
 
 ## License
 
