@@ -147,6 +147,14 @@ def update_tier(ghsa_id: str, tier: VendorTier, publish_by: date) -> None:
         )
 
 
+def rename_ghsa(old_id: str, new_id: str) -> None:
+    with _conn() as conn:
+        conn.execute(
+            "UPDATE advisories SET ghsa_id = ? WHERE ghsa_id = ?",
+            (new_id, old_id)
+        )
+
+
 def _row_to_advisory(row: sqlite3.Row) -> Advisory:
     return Advisory(
         ghsa_id=row["ghsa_id"],

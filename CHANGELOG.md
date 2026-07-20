@@ -1,5 +1,24 @@
 # Changelog
 
+## [RT-IBIS-HUB] — 2026-07-20 — MCP server + ghsa/resolver modules (D1-D3)
+
+Ibis es ahora un hub central de disclosure: expone `ibis_register_finding` via FastMCP, extrae la lógica de GHSA creation a módulo propio, y porta el REPO_MAP de Shrike.
+
+- `ibis/server.py` — `FastMCP("ibis")` con `ibis_register_finding(package, severity, description, source, target_repo?, ecosystem?)`: clasifica tier, resuelve repo+colaborador, crea GHSA draft en GitHub y guarda en DB en una llamada
+- `ibis/ghsa.py` — `create_draft(advisory) → ghsa_id` extraído de `cli.py`; `GHSAError` para fallos de API; incluye `vulnerable_version_range >= 0.0.1` para evitar HTTP 422 en publish
+- `ibis/resolver.py` — `REPO_MAP` (55 targets AI/ML portado de Shrike) + `resolve_repo()` + `resolve_top_contributor()` via `gh api`
+- `pyproject.toml` — agrega `mcp>=1.0` y entry point `ibis-server`
+- D4 (migración de frameworks) diferido — Corvus en desarrollo activo
+
+## [RT-IBIS-CREATE-GHSA] — 2026-07-20 — ibis create-ghsa + db.rename_ghsa()
+
+Pipeline completo para findings de Condor/Shrike con IDs sintéticos.
+
+- `ibis create-ghsa <CONDOR-xxx|SHRIKE-xxx|SOURCE-xxx>` — crea GHSA draft en GitHub con los datos del finding y reemplaza el ID sintético en la DB por el GHSA real
+- `db.rename_ghsa(old_id, new_id)` — UPDATE del primary key en SQLite
+- `cli.py` `create-ghsa` refactorizado para usar `ghsa.create_draft()` — sin duplicación
+- 16 tests nuevos; 96 totales
+
 ## [ad-hoc] — 2026-07-13 — ibis close + cierre GHSA-mf64-cgv4-ppcx (MSRC rejection)
 
 - Nuevo comando `ibis close <GHSA> [--reason texto]` — marca `state=closed`, appende reason a notes

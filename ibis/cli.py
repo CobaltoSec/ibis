@@ -14,7 +14,7 @@ except ImportError:
 from rich.console import Console
 from rich.table import Table
 from rich import box
-from . import db, tiers, npm
+from . import db, tiers, npm, ghsa as _ghsa
 from .models import Advisory, AdvisorySource, AdvisoryState, VendorTier, TIER_DAYS, TIER_LABELS
 from .sync.ghsa import sync as _sync_ghsa
 
@@ -270,6 +270,58 @@ def publish(
             "source": advisory.source.value,
         }, source_tool="ibis")
     console.print(f"[bold green]✓ Published {ghsa_id}[/bold green]")
+
+
+SYNTHETIC_PREFIXES = ("CONDOR-", "SHRIKE-", "SOURCE-")
+
+
+@app.command("create-ghsa")
+def create_ghsa(
+    synthetic_id: str = typer.Argument(..., help="Synthetic ID (CONDOR-xxx, SHRIKE-xxx, SOURCE-xxx)"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation"),
+):
+    """Create a real GitHub GHSA draft from a synthetic-ID advisory."""
+    db.init_db()
+    advisory = db.get(synthetic_id)
+    if not advisory:
+        console.print(f"[red]Not found: {synthetic_id}[/red]")
+        raise typer.Exit(1)
+
+    if not any(synthetic_id.startswith(p) for p in SYNTHETIC_PREFIXES):
+        console.print(
+            f"[red]{synthetic_id} is not a synthetic ID. "
+            f"Expected prefix: {', '.join(SYNTHETIC_PREFIXES)}[/red]"
+        )
+        raise typer.Exit(1)
+
+    tier_color = TIER_COLOR.get(advisory.tier, "white")
+    sev_color = SEVERITY_COLOR.get(advisory.severity, "white")
+    console.print(f"\n[bold]Create GHSA draft:[/bold] {synthetic_id}")
+    console.print(f"  Package:  {advisory.package} ({advisory.ecosystem})")
+    console.print(f"  Severity: [{sev_color}]{advisory.severity}[/{sev_color}]")
+    console.print(
+        f"  Tier:     [{tier_color}]{advisory.tier.value}[/{tier_color}] "
+        f"— {TIER_LABELS[advisory.tier]}"
+    )
+    if advisory.collaborators:
+        console.print(f"  Contacts: {', '.join(advisory.collaborators)}")
+    if advisory.notes:
+        console.print(f"  Notes:    {advisory.notes}")
+
+    if not yes:
+        typer.confirm("\n¿Crear GHSA draft en CobaltoSec/advisories?", abort=True)
+
+    try:
+        real_ghsa = _ghsa.create_draft(advisory)
+    except _ghsa.GHSAError as e:
+        console.print(f"[red]Error creando GHSA: {e}[/red]")
+        raise typer.Exit(1)
+
+    db.rename_ghsa(synthetic_id, real_ghsa)
+    console.print(f"\n[bold green]✓ Created {real_ghsa}[/bold green]  (was {synthetic_id})")
+    console.print(
+        f"  [dim]github.com/CobaltoSec/advisories/security/advisories/{real_ghsa}[/dim]"
+    )
 
 
 @app.command()

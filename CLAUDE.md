@@ -3,8 +3,9 @@
 Disclosure management tool para CobaltoSec. Trackea, clasifica y publica security advisories generados por Corvus, Condor y Shrike.
 
 ## Stack
-- Python 3.11+, `hatchling`, `httpx`, `pydantic v2`, `typer`, `rich`
+- Python 3.11+, `hatchling`, `httpx`, `pydantic v2`, `typer`, `rich`, `mcp`
 - CLI entry point: `ibis` → `ibis/cli.py`
+- MCP server entry point: `ibis-server` → `ibis/server.py`
 - DB: SQLite en `~/.ibis/ibis.db`
 - Tests: `pytest` — dev install: `.venv\Scripts\pip install -e .`
 - Venv: `.venv/` — usar `.venv\Scripts\ibis.exe`
@@ -14,10 +15,11 @@ Disclosure management tool para CobaltoSec. Trackea, clasifica y publica securit
   - `--source condor --results report.json` — importa Condor report.json
   - `--source shrike --dir findings/` — importa directorio de findings de Shrike
 - `ibis add --package pkg --severity sev --source corvus|condor|shrike|manual [--ghsa ID] [--tier A|B|C|D]` — push mode
+- `ibis create-ghsa <CONDOR-xxx|SHRIKE-xxx|SOURCE-xxx>` — crea GHSA draft real en GitHub y reemplaza el ID sintético en la DB
 - `ibis curate [--all]` — modo interactivo: revisar/confirmar tier, cambiar tier, agregar notas (k/t/n/s/q)
 - `ibis status` — tabla completa con tier, deadline, contactos
-- `ibis due [--days N]` — advisories que vencen en N días (default 7)
-- `ibis publish <GHSA>` — publica draft a público via gh api
+- `ibis due [--days N]` — advisories que vencen en N días (default 7); OVERDUE en rojo
+- `ibis publish <GHSA>` — publica draft a público via gh api; emite `ibis.advisory.published` a CobaltoHub
 - `ibis note <GHSA> "texto"` — agrega nota a un advisory
 - `ibis close <GHSA> [--reason texto]` — cierra advisory (vendor rejected, not reproducible, withdrawn)
 - `ibis stats` — resumen por tier
@@ -43,16 +45,20 @@ Lógica en `ibis/tiers.py`. Enterprise = scope conocido (@microsoft, @notionhq, 
 ## Modelo de integración
 
 **Pull:** `ibis sync --source ghsa|condor|shrike` — cada fuente tiene su módulo en `ibis/sync/`.
-**Push:** `ibis add` — llamado por Corvus/Condor/Shrike después de crear un GHSA; `--ghsa` opcional (genera ID sintético si se omite).
+**Push manual:** `ibis add` — llamado por Corvus/Condor/Shrike después de crear un GHSA; `--ghsa` opcional (genera ID sintético si se omite).
+**MCP (hub):** `ibis-server` expone `ibis_register_finding(package, severity, description, source, target_repo?, ecosystem?)` — clasifica tier, resuelve repo/collab, crea GHSA en GitHub y guarda en DB en una sola llamada. D4 (migración de frameworks a este modelo) pendiente.
 
 ## Estructura
 
 ```
 ibis/
   models.py     — Advisory, VendorTier, AdvisorySource, AdvisoryState
-  db.py         — SQLite CRUD (~/.ibis/ibis.db)
+  db.py         — SQLite CRUD (~/.ibis/ibis.db); incluye rename_ghsa()
   tiers.py      — clasificación tier + deadline
   npm.py        — weekly downloads via npmjs.org API
+  ghsa.py       — create_draft(advisory) → ghsa_id real via gh api; GHSAError
+  resolver.py   — REPO_MAP (55 targets AI/ML) + resolve_repo() + resolve_top_contributor()
+  server.py     — FastMCP("ibis") con ibis_register_finding tool
   sync/
     ghsa.py     — pull desde CobaltoSec/advisories (gh api)
     condor.py   — importa Condor report.json → IDs CONDOR-YYYYMMDD-NNN
@@ -61,7 +67,7 @@ ibis/
 tests/
   conftest.py   — fixtures: test_db (SQLite tmp), no_npm/npm_enterprise, mock_gh_api
   fixtures/     — JSONs de Condor y Shrike para tests
-  test_*.py     — e2e tests por módulo (70 total)
+  test_*.py     — e2e tests por módulo (96 total)
 ```
 
 ## IDs sintéticos
