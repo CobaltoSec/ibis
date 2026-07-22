@@ -53,6 +53,22 @@ def shrike_dir_two_findings(tmp_path):
 
 
 @pytest.fixture
+def corvus_curated_md(tmp_path):
+    data = (FIXTURES / "corvus_curated_cs16.md").read_text()
+    p = tmp_path / "findings-curated-cs16.md"
+    p.write_text(data)
+    return p
+
+
+@pytest.fixture
+def corvus_report_json(tmp_path):
+    data = (FIXTURES / "corvus_report_glimind.json").read_text()
+    p = tmp_path / "report.json"
+    p.write_text(data)
+    return p
+
+
+@pytest.fixture
 def shrike_dir_with_collaborator(tmp_path):
     findings_dir = tmp_path / "findings"
     findings_dir.mkdir()

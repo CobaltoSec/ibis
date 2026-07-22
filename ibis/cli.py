@@ -38,9 +38,11 @@ TIER_COLOR = {
 
 @app.command()
 def sync(
-    source: str = typer.Option("ghsa", "--source", "-s", help="Source: ghsa | condor | shrike"),
+    source: str = typer.Option("ghsa", "--source", "-s", help="Source: ghsa | condor | shrike | corvus"),
     results: Optional[Path] = typer.Option(None, "--results", "-r", help="Condor report.json path"),
     findings_dir: Optional[Path] = typer.Option(None, "--dir", "-d", help="Shrike findings/ directory"),
+    curated: Optional[Path] = typer.Option(None, "--curated", "-c", help="Corvus findings-curated-cs*.md path"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Corvus raw report.json path (generates synthetic IDs)"),
     no_npm: bool = typer.Option(False, "--no-npm", help="Skip npm download lookup"),
 ):
     """Pull advisories from a source and classify by tier."""
@@ -58,8 +60,19 @@ def sync(
             raise typer.Exit(1)
         from .sync.shrike import sync as _sync_shrike
         _sync_shrike(findings_dir, fetch_npm=not no_npm)
+    elif source == "corvus":
+        from .sync.corvus import sync_curated, sync_report
+        if curated:
+            sync_curated(curated)
+        elif report:
+            sync_report(report)
+        else:
+            console.print(
+                "[red]--curated <findings-curated.md> or --report <report.json> required for --source corvus[/red]"
+            )
+            raise typer.Exit(1)
     else:
-        console.print(f"[red]Unknown source: {source!r}. Valid: ghsa, condor, shrike[/red]")
+        console.print(f"[red]Unknown source: {source!r}. Valid: ghsa, condor, shrike, corvus[/red]")
         raise typer.Exit(1)
 
 

@@ -1,0 +1,47 @@
+{
+  "target": "https://glimind.com/mcp",
+  "transport": "http",
+  "surface": {
+    "server_name": "glimind-oracle",
+    "server_version": "0.1.0",
+    "protocol_version": "2024-11-05",
+    "tools": [],
+    "resources": [],
+    "prompts": []
+  },
+  "findings": [
+    {
+      "id": "ssrf-001",
+      "owasp_category": "EXT04",
+      "severity": "critical",
+      "title": "SSRF via watch_tool toolId parameter",
+      "description": "AWS IMDS reachable via http://169.254.169.254/latest/meta-data/",
+      "tool_name": "watch_tool",
+      "parameter": "toolId",
+      "evidence": "ami-id: ami-0abcdef1234567890",
+      "confidence": 95,
+      "cvss_vector": "AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N"
+    },
+    {
+      "id": "token-001",
+      "owasp_category": "MCP01",
+      "severity": "high",
+      "title": "Internal credentials leaked in route_task response",
+      "description": "API key visible in JSON response body",
+      "tool_name": "route_task",
+      "confidence": 75,
+      "cvss_vector": "AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N"
+    },
+    {
+      "id": "info-001",
+      "owasp_category": "EXT02",
+      "severity": "low",
+      "title": "Missing input validation on optional field",
+      "description": "Non-critical schema gap",
+      "confidence": 50,
+      "cvss_vector": null
+    }
+  ],
+  "modules_run": ["ssrf", "token_exposure", "schema_audit"],
+  "duration_seconds": 12.4
+}
