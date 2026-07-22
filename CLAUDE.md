@@ -46,7 +46,8 @@ Lógica en `ibis/tiers.py`. Enterprise = scope conocido (@microsoft, @notionhq, 
 
 **Pull:** `ibis sync --source ghsa|condor|shrike` — cada fuente tiene su módulo en `ibis/sync/`.
 **Push manual:** `ibis add` — llamado por Corvus/Condor/Shrike después de crear un GHSA; `--ghsa` opcional (genera ID sintético si se omite).
-**MCP (hub):** `ibis-server` expone `ibis_register_finding(package, severity, description, source, target_repo?, ecosystem?)` — clasifica tier, resuelve repo/collab, crea GHSA en GitHub y guarda en DB en una sola llamada. D4 (migración de frameworks a este modelo) pendiente.
+**MCP (hub):** `ibis-server` expone `ibis_register_finding(package, severity, description, source, target_repo?, ecosystem?)` — clasifica tier, resuelve repo/collab, crea GHSA en GitHub y guarda en DB en una sola llamada.
+**Import directo (D4):** `from ibis.core import register_finding` — Corvus y Shrike llaman directamente sin requerir ibis-server. Acepta `ghsa_id` opcional para skip de GHSA creation.
 
 ## Estructura
 
@@ -58,7 +59,8 @@ ibis/
   npm.py        — weekly downloads via npmjs.org API
   ghsa.py       — create_draft(advisory) → ghsa_id real via gh api; GHSAError
   resolver.py   — REPO_MAP (55 targets AI/ML) + resolve_repo() + resolve_top_contributor()
-  server.py     — FastMCP("ibis") con ibis_register_finding tool
+  core.py       — register_finding() función pública (importable sin MCP); acepta ghsa_id opcional
+  server.py     — FastMCP("ibis") thin wrapper sobre core.register_finding
   sync/
     ghsa.py     — pull desde CobaltoSec/advisories (gh api)
     condor.py   — importa Condor report.json → IDs CONDOR-YYYYMMDD-NNN

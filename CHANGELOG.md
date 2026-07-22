@@ -1,5 +1,16 @@
 # Changelog
 
+## [RT-IBIS-HUB D4 + RT-IBIS-E2E] — 2026-07-22 — Hub completo + tests E2E
+
+- `ibis/core.py` (nuevo) — `register_finding()` como función pública importable sin MCP server. Acepta `ghsa_id` opcional para skip de GHSA creation (cuando el framework ya creó el GHSA).
+- `ibis/server.py` — refactorizado como thin wrapper MCP sobre `core.register_finding`
+- **D4-Corvus** — `corvus/cli.py` + `batch.py`: `_ibis_report_findings()` post-scan, filtra severity ≥ high + confidence ≥ 60, ecosystem="mcp". `cobaltosec-ibis` instalado en venv de Corvus.
+- **D4-Shrike** — `shrike/server.py`: `_ibis_sync()` en `shrike_disclose_github` + `shrike_disclose`, solo `mode=advisory_fallback` (no pvr). `cobaltosec-ibis` instalado en venv de Shrike.
+- **D4-Condor** — diferido, Condor en desarrollo activo.
+- `tests/test_core.py` — 5 tests para `register_finding` con `ghsa_id`
+- `tests/test_e2e.py` — 6 escenarios E2E: Corvus pipeline, Shrike existing GHSA, multi-finding, Tier D, idempotencia, cross-source
+- 122 tests pasando (111 → 122)
+
 ## [RT-IBIS-HUB] — 2026-07-20 — MCP server + ghsa/resolver modules (D1-D3)
 
 Ibis es ahora un hub central de disclosure: expone `ibis_register_finding` via FastMCP, extrae la lógica de GHSA creation a módulo propio, y porta el REPO_MAP de Shrike.
