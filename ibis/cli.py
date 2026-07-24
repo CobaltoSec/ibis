@@ -363,6 +363,38 @@ def mark_removed(
         console.print(f"  Note:         {note_text}")
 
 
+@app.command("recalculate-tiers")
+def recalculate_tiers(
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show changes without applying"),
+):
+    """Re-apply tier classification to all non-published advisories.
+
+    Fixes advisories that were auto-assigned Tier D at creation time
+    (before collaborators were known) but should be C based on package name.
+    Does NOT change advisories with collaborator_removed=True.
+    """
+    db.init_db()
+    advisories = [a for a in db.list_all() if a.state != AdvisoryState.published]
+    changed = 0
+    for a in advisories:
+        if a.collaborator_removed:
+            continue
+        new_tier = tiers.classify(a.package, a.collaborators or [], False, a.npm_downloads)
+        new_deadline = tiers.publish_deadline(new_tier, a.created_at)
+        if new_tier != a.tier:
+            console.print(
+                f"  {'[dim](dry)[/dim] ' if dry_run else ''}"
+                f"{a.ghsa_id} {a.package}: "
+                f"[red]{a.tier.value}[/red] → [{TIER_COLOR[new_tier]}]{new_tier.value}[/{TIER_COLOR[new_tier]}] "
+                f"(publish_by: {a.publish_by} → {new_deadline})"
+            )
+            if not dry_run:
+                db.update_tier(a.ghsa_id, new_tier, new_deadline)
+            changed += 1
+    label = "Would change" if dry_run else "Changed"
+    console.print(f"\n[bold]{label} {changed} advisory tier(s).[/bold]")
+
+
 @app.command()
 def note(
     ghsa_id: str = typer.Argument(...),

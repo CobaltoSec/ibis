@@ -37,8 +37,9 @@ def classify(
     collaborator_removed: bool = False,
     npm_downloads: int | None = None,
 ) -> VendorTier:
-    # Tier D: no contact at all
-    if not collaborators or collaborator_removed:
+    # Tier D: collaborator explicitly removed (mark_removed was called).
+    # Empty collaborators at creation time means "not yet contacted" — not D.
+    if collaborator_removed:
         return VendorTier.D
 
     pkg_clean = package.lstrip("@").split("/")[0] if "/" in package else package
